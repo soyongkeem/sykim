@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚗️ 연금술사의 황금 탐험 ⚜️</title>
+    <style>
+        body {
+            font-family: Helvetica, sans-serif;
+            background-color: #d8d1be;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .alchemy-board {
+            flex-grow: 1;
+            background-color: rgba(0, 0, 0, 0.7); /* 투명도 70% */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            pointer-events: none; /* Start 버튼 전까지 클릭 불가 */
+        }
+
+        .element {
+            width: 100px;
+            height: 60px;
+            background-color: #fff;
+            border: 2px solid #007AFF;
+            border-radius: 4px;
+            margin: 10px;
+            text-align: center;
+            line-height: 60px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .volume-control {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+}
+
+#volumeSlider {
+    margin-left: 10px;
+    width: 100px;
+}
+
+        .right-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 가로 방향(수평) 가운데 정렬 */
+            width: 180px;
+            background-color: #fff;
+            padding: 16px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .element-list {
+            font-size: 18px;
+            color: #fffff;
+        }
+
+        .element-list ul {
+            list-style-type: none;
+            padding: 36;
+        }
+
+        .element-list li {
+            margin-bottom: 10px;
+        }
+
+        .element-list .element {
+            width: 100px;
+            height: 50px;
+            background-color: #007AFF;
+            color: white;
+            line-height: 50px;
+            text-align: center;
+            border-radius: 4px;
+            cursor: grab;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* 축하 메시지 스타일 */
+        .congratulations, .failure {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            color: white;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .congratulations {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .failure {
+            background-color: rgba(255, 0, 0, 0.9);
+        }
+
+        .congratulations h1, .failure h1 {
+            font-size: 50px;
+            margin-bottom: 20px;
+        }
+
+        .congratulations p, .failure p {
+            font-size: 24px;
+        }
+
+        /* 팝업 스타일 */
+        .popup {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('gold.jpg');
+            background-size: cover; /* 팝업에 이미지가 꽉 차도록 */
+            background-position: center; /* 이미지를 중앙에 배치 */
+            color: white;
+            font-size: 24px;
+            z-index: 10;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            color: white;
+            font-size: 24px;
+            z-index: 10;
+            flex-direction: column;
+        }
+
+        .popup button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #007AFF;
+            border: 4;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .popup p {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* 타이머 및 버튼 스타일 */
+        .controls {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .controls button {
+            width: 100px;
+            height: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            boeder: 4px;
+        }
+
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .message-box {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0);
+        color: black;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 18px;
+        text-align: center;
+        z-index: 100;
+        }
+
+    </style>
+</head>
+<body>
+<!-- 팝업 화면 -->
+<div class="popup" id="popupScreen">
+    <div>
+        <p>⚗️ 연금술사의 황금 탐험 ⚜️에 오신 것을 환영합니다!</p>
+        <p>고대부터 내려져오던 비밀, 아무도 갖지 못한 연금술!
+         1분안에 네가지 원소로 황금을 만드세요.</p>
+        <button onclick="closePopup()">Get Started</button>
+    </div>
+
+</div>
+<div id="message" class="message-box"></div>
+<div class="container">
+    <audio id="musicPlayer" src="music1.mp3"></audio>
+    <div class="alchemy-board" id="alchemyBoard" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <!-- 결합 보드 -->
+    </div>
+
+    <div class="right-bar">
+        <div class="controls">
+            <button id="startButton" onclick="startGame()">Start</button>
+            <div class="timer" id="timer">01:00</div>
+        </div>
+        <h2>사용 가능한 원소</h2>
+        <div class="element-list" id="elementList">
+            <ul id="availableElements">
+                <!-- 기본 원소들 추가 -->
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div id="result"></div>
+
+<!-- 축하 메시지를 표시할 요소 -->
+<div class="congratulations" id="congratulationsMessage">
+    <h1>⚜️ 축하합니다! 당신은 진정한 연금술사입니다!</h1>
+    <p>마침내 금 ⚜️을 만들어냈군요! 고대의 연금술 비밀을 풀고, 신비로운 힘을 손에 넣었습니다. 이제 당신은 전설적인 연금술사로 기록될 것입니다.</p>
+</div>
+
+<!-- 실패 메시지를 표시할 요소 -->
+<div class="failure" id="failureMessage">
+    <h1>😅 아쉽군요! 연금술에 실패했습니다...</h1>
+    <p>금 ⚜️은 여전히 신비 속에 남아있습니다. 당신의 조합은 충분히 강력하지 않았어요. 다시 도전해 연금술의 비밀을 풀어보세요!</p>
+</div>
+<div class="volume-control">
+    <label for="volumeSlider">🔊 볼륨</label>
+    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1" oninput="setVolume(this.value)">
+</div>
+
+<script>
+    let draggedElement = null;
+    let newElementId = 1;
+    let gameStarted = false;
+    let isMusicPlaying = false;  // 음악이 재생 중인지 여부를 추적
+    let timerInterval;
+const messages = [
+    '불 🔥이 두 배면 에너지⚡️ 가 번쩍',
+    '광물 💎을 전기로 충전하면 금 ⚜️이 반짝일 시간!',
+    '금속 ⛓️에 번개 ⚡️를 쏘면, 금 ⚜️이 마법처럼 등장!',
+    '보석 💍이 에너지 ⚡️를 만나면 금 ⚜️으로 변신!',
+    '금속 ⛓️을 금 ⚜️으로 바꾸는 비법은 에너지 ⚡️!',
+    '다이아몬드 💎에 에너지 ⚡️를 더하면 금 ⚜️이 반짝!',
+    '뜨거운 용암 🌋에 에너지를 더해 금 ⚜️을 녹여내세요!',
+    '사막의 폭풍 🏜️이 에너지를 만나 금 ⚜️으로 변신합니다!',
+    '유리 👓에 에너지를 더하면, 금 ⚜️을 보는 순간이 다가와요!',
+    '광물 💎에 압력을 주면, 반짝이는 금 ⚜️이 나타나죠.',
+    '흙 🌍은 의외로 에너지 ⚡️를 변하게해요.',
+    '산 🏔️을 뜨겁게 달궈서 금 ⚜️을 만들어내는 재미!',
+    '화산 🌋의 폭발적인 에너지가 금 ⚜️을 만들어냅니다!',
+    '전투용 무기 ⚔️를 금 ⚜️으로 만드는 건 에너지 한 방이면 끝!',
+    '강철 🛡️을 번쩍! 에너지를 더해 금 ⚜️을 얻는 마법!',
+    '무지개 🌈에 에너지를 더해 금 ⚜️이 숨겨진 곳을 발견해보세요!'
+];
+
+let messageIndex = 0;  // 현재 표시할 메시지 인덱스
+
+function updateMessage() {
+    const messageBox = document.getElementById('message');
+    messageBox.innerText = messages[messageIndex];  // 메시지 업데이트
+    messageIndex = (messageIndex + 1) % messages.length;  // 메시지 인덱스 순환
+}
+
+// 5초마다 메시지를 업데이트
+setInterval(updateMessage, 7000);
+
+// 페이지 로드 시 첫 메시지 표시
+window.onload = updateMessage;
+
+// 타이머 시작 함수 (음악 제어 포함)
+ function startGame() {
+        const musicPlayer = document.getElementById('musicPlayer');  // 음악 요소 가져오기
+
+        if (!gameStarted) {
+            gameStarted = true;
+            document.getElementById("alchemyBoard").style.backgroundColor = "#e0e0e0"; // 투명도 제거
+            document.getElementById("alchemyBoard").style.pointerEvents = "auto"; // 보드 활성화
+            document.getElementById("startButton").innerText = "Stop";
+
+            startTimer();  // 타이머 시작
+
+            // 음악 재생
+            if (!isMusicPlaying) {
+                musicPlayer.play();
+                isMusicPlaying = true;  // 음악이 재생 중임을 기록
+            }
+        } else {
+            stopGame();  // 게임과 음악을 중지
+        }
+    }
+function startTimer() {
+    let timeRemaining = 60;  // 1분 타이머
+    const timerElement = document.getElementById("timer");
+
+    timerInterval = setInterval(function () {
+        timeRemaining--;
+        const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+        const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+        timerElement.innerText = `${minutes}:${seconds}`;
+
+        // 10초 이하일 때 타이머 색상을 빨간색으로 변경
+        if (timeRemaining <= 10) {
+            timerElement.style.color = 'red';
+        } else {
+            timerElement.style.color = 'white';  // 기본 색상으로 돌아옴
+        }
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            stopGame();  // 타이머가 끝나면 게임을 중지
+        }
+    }, 1000);
+}
+function startTimer() {
+    let timeRemaining = 60;  // 1분 타이머
+    const timerElement = document.getElementById("timer");
+    const rightBarElement = document.querySelector('.right-bar');  // 우측 바 선택
+
+    timerInterval = setInterval(function () {
+        timeRemaining--;
+        const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+        const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+        timerElement.innerText = `${minutes}:${seconds}`;
+
+        // 10초 이하일 때 타이머 색상을 빨간색으로 변경
+        if (timeRemaining <= 10) {
+            timerElement.style.color = 'red';
+            rightBarElement.style.backgroundColor = 'rgba(255, 0, 0, 1)';  // 빨간색 100%
+        } 
+        // 30초 이하일 때 우측 바 배경색을 50% 빨간색으로 변경
+        else if (timeRemaining <= 30) {
+            rightBarElement.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';  // 빨간색 50%
+        } 
+        // 30초 이상일 때 기본 배경색 유지
+        else {
+            timerElement.style.color = 'white';  // 타이머 기본 색상
+            rightBarElement.style.backgroundColor = '';  // 우측 바 기본 배경색
+        }
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            stopGame();  // 타이머가 끝나면 게임을 중지
+        }
+    }, 1000);
+}
+
+function stopGame() {
+    const musicPlayer = document.getElementById('musicPlayer');  // 음악 요소 가져오기
+
+    gameStarted = false;
+    clearInterval(timerInterval);  // 타이머 멈춤
+    document.getElementById("startButton").innerText = "Start";
+    document.getElementById("alchemyBoard").style.pointerEvents = "none"; // 보드 비활성화
+
+    // 음악 정지
+    if (!musicPlayer.paused) {  // 음악이 재생 중인지 확인
+        musicPlayer.pause();  // 음악 정지
+        musicPlayer.currentTime = 0;  // 음악 처음으로 돌리기
+        isMusicPlaying = false;  // 음악이 중지되었음을 기록
+    }
+}
+    const musicPlayer = document.getElementById('musicPlayer'); 
+
+    // 초기 원소 배열 (이모티콘 반영)
+    const initialElements = ['물 💧', '불 🔥', '흙 🌏', '공기 💨'];
+
+    // 원소 조합 결과 (이모티콘 및 동일 원소 조합 추가 반영)
+    const combinations = {
+    '물 💧+물 💧':'강 💦',
+    '강 💦+강 💦':'바다 🌊',
+    '불 🔥+불 🔥':'에너지 ⚡️',     
+    '흙 🌏+흙 🌏':'돌 🪨',
+    '공기 💨+공기 💨':'바람 🌪️',
+    '에너지 ⚡️+광물 💎':'금 ⚜️',
+    '물 💧+물 💧':'강 💦',
+   '강 💦+강 💦': '바다 🌊',
+   '불 🔥+불 🔥': '에너지 ⚡️',
+   '흙 🌏+흙 🌏': '돌 🪨',
+   '공기 💨+공기 💨': '바람 🌪️',
+   '에너지 ⚡️+광물 💎': '금 ⚜️',
+   '금속 ⛓️+금속 ⛓️': '강철 🛡️',
+   '광물 💎+광물 💎': '보석 💍',
+   '보석 💍+에너지 ⚡️': '금 ⚜️',
+   '바위 🪨+바위 🪨': '산맥 🏔️',
+   '에너지 ⚡️+에너지 ⚡️': '번개 🌩️',
+   '돌 🪨+돌 🪨': '산 🏔️',
+   '바람 🌪️+바람 🌪️': '폭풍 🌪️',
+   '모래 ⌛️+모래 ⌛️': '사막 🏜️',
+   '번개 🌩️+번개 🌩️': '폭풍우 ⛈️',
+   '물 💧+불 🔥': '증기 ☁️',
+   '물 💧+흙 🌏': '진흙 🤎',
+   '물 💧+공기 💨': '안개 🌫️',
+   '물 💧+돌 🪨': '바위 🪨',
+   '물 💧+금속 ⛓️': '녹 🟢',
+   '물 💧+에너지 ⚡️': '전기 🌩️',
+   '불 🔥+흙 🌏': '용암 🌋',
+   '불 🔥+공기 💨': '열기 ♨️',
+   '불 🔥+돌 🪨': '금속 ⛓️',
+   '불 🔥+광물 💎': '금속 ⛓️',
+   '흙 🌏+공기 💨': '먼지 💨',
+   '흙 🌏+돌 🪨': '산 🏔️',
+   '흙 🌏+에너지 ⚡️': '광물 💎',
+   '강 💦+흙 🌏': '섬 🏝️',
+   '강 💦+바람 🌪️': '태풍 🌪️',
+   '용암 🌋+물 💧': '바위 🪨',
+   '용암 🌋+공기 💨': '화산 🌋',
+   '에너지 ⚡️+물 💧': '전기 🌩️',
+   '에너지 ⚡️+흙 🌏': '금속 ⛓️',
+   '에너지 ⚡️+광물 💎': '금속 ⛓️',
+   '돌 🪨+불 🔥': '금속 ⛓️',
+   '돌 🪨+공기 💨': '모래 ⌛️',
+   '먼지 💨+불 🔥': '재 🧂',
+   '바람 🌪️+물 💧': '파도 🌊',
+   '바람 🌪️+흙 🌏': '모래폭풍 🏜️',
+   '모래폭풍 🏜️+불 🔥': '금속 ⛓️',
+   '번개 🌩️+흙 🌏': '광물 💎',
+   '섬 🏝️+에너지 ⚡️': '광물 💎',
+   '모래 ⌛️+공기 💨': '사막 🌵',
+   '금속 ⛓️+금속 ⛓️': '강철 🛡️',
+   '금속 ⛓️+돌 🪨': '무기 ⚔️',
+   '모래 ⌛️+금속 ⛓️': '콘크리트 🏗️',
+   '도자기 🏺+도자기 🏺': '도자기 🏺',
+   '바다 🌊+바다 🌊': '바다 🌊',
+   '강철 🛡️+강철 🛡️': '강철 🛡️',
+   '무기 ⚔️+무기 ⚔️': '무기 ⚔️',
+   '콘크리트 🏗️+콘크리트 🏗️': '콘크리트 🏗️',
+   '수은 🩶+수은 🩶': '수은 🩶',
+   '오로라 💜+오로라 💜': '오로라 💜',
+   '사막 🌵+사막 🌵': '사막 🌵',
+   '화산 🌋+화산 🌋': '화산 🌋',
+   '태풍 🌪️+태풍 🌪️': '태풍 🌪️',
+   '금 ⚜️+금 ⚜️': '금 ⚜️',
+   '산 🏔️+불 🔥': '화산 🌋',
+   '화산 🌋+에너지 ⚡️': '금 ⚜️',
+   '바다 🌊+에너지 ⚡️': '폭풍 🌀',
+   '폭풍 🌀+흙 🌏': '모래폭풍 🏜️',
+   '모래폭풍 🏜️+에너지 ⚡️': '금 ⚜️',
+   '사막 🌵+불 🔥': '유리 👓',
+   '유리 👓+에너지 ⚡️': '광물 💎',
+   '광물 💎+압력 🗜️': '금 ⚜️',
+   '돌 🪨+압력 🗜️': '다이아몬드 💎',
+   '다이아몬드 💎+에너지 ⚡️': '금 ⚜️',
+   '무기 ⚔️+에너지 ⚡️': '금 ⚜️',
+   '강철 🛡️+에너지 ⚡️': '금 ⚜️',
+   '번개 🌩️+모래 ⌛️': '유리 👓',
+   '먼지 💨+먼지 💨': '스모그 🌫️',
+   '끓는물 ♨️+끓는물 ♨️': '증기 ☁️',
+   '산 🏔️+산 🏔️': '산맥 🏔️',
+   '진흙 🤎+불 🔥': '벽돌 🧱',
+   '자갈 🪨+자갈 🪨': '모래 ⌛️',
+   '연기 💭+연기 💭': '스모그 🌫️',
+   '파도 🌊+파도 🌊': '쓰나미 🌊',
+   '재 🧂+물 💧': '비료 🌱',
+   '유리 👓+모래 ⌛️': '렌즈 🔍',
+   '렌즈 🔍+렌즈 🔍': '망원경 🔭',
+   '증기 ☁️+차가운공기 ❄️': '비 🌧️',
+   '비 🌧️+차가운공기 ❄️': '눈 ❄️',
+   '눈 ❄️+눈 ❄️': '빙하 🧊',
+   '빙하 🧊+압력 🗜️': '다이아몬드 💎',
+   '화산 🌋+바다 🌊': '새로운섬 🏝️',
+   '번개 🌩️+나무 🌳': '불 🔥',
+   '불 🔥+나무 🌳': '숯 🖤',
+   '숯 🖤+압력 🗜️': '다이아몬드 💎',
+   '모래 ⌛️+번개 🌩️': '유리 👓',
+   '유리 👓+유리 👓': '안경 👓',
+   '안경 👓+금속 ⛓️': '망원경 🔭',
+   '폭풍 🌀+폭풍 🌀': '허리케인 🌀',
+   '허리케인 🌀+에너지 ⚡️': '토네이도 🌪️',
+   '진흙 🤎+식물 🌱': '흙 🌏',
+   '흙 🌏+생명 🧬': '벌레 🐛',
+   '벌레 🐛+시간 ⏳': '나비 🦋',
+   '나비 🦋+꽃 🌸': '수분 🌺',
+   '수분 🌺+나무 🌳': '과일 🍎',
+   '과일 🍎+시간 ⏳': '씨앗 🌰',
+   '씨앗 🌰+물 💧': '새싹 🌱',
+   '새싹 🌱+시간 ⏳': '나무 🌳',
+   '나무 🌳+나무 🌳': '숲 🌳',
+   '숲 🌳+시간 ⏳': '목재 🪵',
+   '유리 👓+불 🔥': '금속 ⛓️',
+   '오로라 💜+물 💧': '무지개 🌈',
+   '무지개 🌈+에너지 ⚡️': '금 ⚜️',
+   '불 🔥 + 강철 🛡️': '금 ⚜️',
+   '번개 🌩️ + 광물 💎': '금 ⚜️',
+   '강철 🛡️ + 불 🔥': '금 ⚜️',
+   '화산 🌋 + 에너지 ⚡️': '금 ⚜️',
+   '모래폭풍 🏜️ + 에너지 ⚡️': '금 ⚜️',
+   '섬 🏝️ + 에너지 ⚡️': '금 ⚜️',
+   '태풍 🌪️ + 에너지 ⚡️': '금 ⚜️',
+   '폭풍 🌊 + 광물 💎': '금 ⚜️',
+   '바다 🌊 + 에너지 ⚡️': '금 ⚜️',
+   '빙하 🧊 + 압력 🗜️': '금 ⚜️',
+   '숯 🖤 + 압력 🗜️': '금 ⚜️',
+   '불 🔥 + 용광로 🔥': '금 ⚜️',
+   '기계 ⚙️ + 에너지 ⚡️': '금 ⚜️',
+   '나무 🌳 + 번개 🌩️': '금 ⚜️',
+   '에너지 ⚡️ + 바위 🪨': '금 ⚜️',
+   '번개 🌩️ + 금속 ⛓️': '금 ⚜️',
+   '불 🔥 + 광물 💎': '금 ⚜️',
+   '강철 🛡️ + 에너지 ⚡️': '금 ⚜️',
+   '바다 🌊 + 번개 🌩️': '금 ⚜️',
+   '모래 ⌛️ + 번개 🌩️': '금 ⚜️',
+   '불 🔥 + 보석 💍': '금 ⚜️',
+   '용암 🌋 + 에너지 ⚡️': '금 ⚜️',
+   '폭풍 🌊 + 에너지 ⚡️': '금 ⚜️',
+   '나무 🌳 + 에너지 ⚡️': '금 ⚜️',
+   '모래폭풍 🏜️ + 번개 🌩️': '금 ⚜️',
+   '파도 🌊 + 에너지 ⚡️': '금 ⚜️',
+   '도자기 🏺 + 에너지 ⚡️': '금 ⚜️',
+   '오로라 💜 + 바람 💨': '금 ⚜️',
+   '산 🏔️ + 번개 🌩️': '금 ⚜️',
+   '물 💧 + 용암 🌋': '금 ⚜️',
+   '흙 🌏 + 번개 🌩️': '금 ⚜️',
+   '모래 ⌛️ + 에너지 ⚡️': '금 ⚜️',
+   '에너지 ⚡️ + 섬 🏝️': '금 ⚜️',
+   '바람 💨 + 강철 🛡️': '금 ⚜️'
+    };
+
+    // 팝업 닫기 함수
+    function closePopup() {
+        document.getElementById("popupScreen").style.display = "none";
+        document.getElementById("alchemyBoard").style.pointerEvents = "auto";  // 보드 클릭 가능하게 변경
+    }
+
+    // 드래그 시작 시 호출되는 함수
+    function drag(ev) {
+        if (!gameStarted) return;  // 게임 시작 전에는 드래그 불가
+        draggedElement = ev.target;
+        ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    // 드래그 앤 드롭을 허용하는 함수
+    function allowDrop(ev) {
+        if (gameStarted) ev.preventDefault();  // 게임 시작 전에는 드롭 불가
+    }
+
+    // 드롭 시 호출되는 함수
+    function drop(ev) {
+        ev.preventDefault();
+        var data = ev.dataTransfer.getData("text");
+        var targetElement = ev.target;
+
+        if (draggedElement && draggedElement.parentNode === document.getElementById('alchemyBoard')) {
+            // 결합 보드에서 드래그된 경우: 위치만 이동
+            draggedElement.style.left = (ev.clientX - 50) + 'px';
+            draggedElement.style.top = (ev.clientY - 50) + 'px';
+        } else {
+            // 원소 보드에서 드래그된 경우: 복사해서 결합보드에 추가
+            let clonedElement = draggedElement.cloneNode(true);
+            clonedElement.style.position = "absolute";
+            clonedElement.style.left = (ev.clientX - 50) + 'px';
+            clonedElement.style.top = (ev.clientY - 50) + 'px';
+            clonedElement.draggable = true;
+            clonedElement.ondragstart = drag;
+            document.getElementById("alchemyBoard").appendChild(clonedElement);
+            draggedElement = clonedElement;  // Update draggedElement to the cloned element
+        }
+
+        // 두 번째 원소가 드래그되면 결합 시도
+        if (targetElement.classList.contains('element') && targetElement !== draggedElement) {
+            combineElements(draggedElement, targetElement);
+        }
+    }
+
+    // 원소 결합 함수
+    function combineElements(element1, element2) {
+        const id1 = element1.innerText;
+        const id2 = element2.innerText;
+        const resultKey = `${id1}+${id2}`;
+        let resultElement = combinations[resultKey];
+
+        if (!resultElement) {
+            const reverseResultKey = `${id2}+${id1}`;
+            resultElement = combinations[reverseResultKey];
+        }
+
+        if (!resultElement) {
+            // 조합이 없는 경우 첫 번째 원소로 결합 처리
+            resultElement = id1;
+        }
+
+        // 새로운 원소 생성
+        let newElement = document.createElement('div');
+        newElement.classList.add('element');
+        newElement.id = resultElement;
+        newElement.innerText = resultElement;
+        newElement.style.position = "absolute";
+        
+        // 새 원소의 위치를 두 원소의 중간으로 설정
+        const left1 = parseInt(element1.style.left);
+        const left2 = parseInt(element2.style.left);
+        const top1 = parseInt(element1.style.top);
+        const top2 = parseInt(element2.style.top);
+        newElement.style.left = ((left1 + left2) / 2) + 'px';
+        newElement.style.top = ((top1 + top2) / 2) + 'px';
+
+        newElement.draggable = true;
+        newElement.ondragstart = drag;
+
+        // 결합 보드에 새 원소 추가
+        document.getElementById('alchemyBoard').appendChild(newElement);
+
+        // 원래의 두 원소 제거
+        element1.remove();
+        element2.remove();
+
+        // 결과 표시
+        document.getElementById("result").innerText = `${id1} + ${id2} = ${resultElement}`;
+
+        // 새로운 원소를 우측 원소 보드에 추가 (이미 존재하지 않는 경우)
+        addElementToBoard(resultElement);
+
+        // 금 조합을 달성했을 때 축하 메시지를 표시
+        if (resultElement === '금 ⚜️') {
+            showCongratulationsMessage();
+        }
+    }
+
+    // 우측 원소 보드에 새로운 원소 추가
+    function addElementToBoard(name) {
+        let elementList = document.getElementById('availableElements');
+        let existingElement = elementList.querySelector(`[id="${name}"]`);
+        if (!existingElement) {
+            let newElementLi = document.createElement('li');
+            let elementDiv = document.createElement('div');
+            elementDiv.classList.add('element');
+            elementDiv.innerText = name;
+            elementDiv.draggable = true;
+            elementDiv.id = name;
+            elementDiv.ondragstart = drag;
+            newElementLi.appendChild(elementDiv);
+            elementList.appendChild(newElementLi);
+        }
+    }
+
+    // 타이머 시작 함수
+    function startGame() {
+        if (!gameStarted) {
+            gameStarted = true;
+            document.getElementById("alchemyBoard").style.backgroundColor = "#e0e0e0"; // 투명도 제거
+            document.getElementById("alchemyBoard").style.pointerEvents = "auto"; // 보드 활성화
+            document.getElementById("startButton").innerText = "Stop";
+            startTimer();
+            musicPlayer.play();  // 음악 재생
+        } else {
+            stopGame();
+        }
+    }
+
+      function startTimer() {
+    let timeRemaining = 60;
+    timerInterval = setInterval(function () {
+        timeRemaining--;
+        const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+        const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+        document.getElementById("timer").innerText = `${minutes}:${seconds}`;
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            showFailureMessage();  // 타이머가 끝나면 실패 메시지 표시
+            stopGame();  // 게임을 중지
+        }
+    }, 1000);
+}
+
+
+    // 게임 중지 및 초기화
+    function stopGame() {
+        gameStarted = false;
+        clearInterval(timerInterval);  // 타이머를 멈추기만 하고 시간을 유지
+        document.getElementById("startButton").innerText = "Start";
+        document.getElementById("alchemyBoard").style.pointerEvents = "none"; // 보드 비활성화
+    }
+
+    // 축하 메시지 표시 함수
+    function showCongratulationsMessage() {
+        clearInterval(timerInterval);
+        document.getElementById("congratulationsMessage").style.display = "flex";  // 축하 메시지를 표시
+        document.getElementById("congratulationsMessage").onclick = function() {
+            window.location.reload();  // 페이지 새로고침하여 첫 화면으로 이동
+        };
+    }
+
+    // 실패 메시지 표시 함수
+    function showFailureMessage() {
+        document.getElementById("alchemyBoard").style.pointerEvents = "none";
+        document.getElementById("failureMessage").style.display = "flex";  // 실패 메시지를 표시
+        document.getElementById("failureMessage").onclick = function() {
+            window.location.reload();  // 페이지 새로고침하여 첫 화면으로 이동
+        };
+    }
+function setVolume(value) {
+    const musicPlayer = document.getElementById('musicPlayer');
+    musicPlayer.volume = value;  // 오디오 볼륨을 슬라이더 값으로 설정
+}
+
+    // 기본 원소들을 우측 원소보드에 표시
+    function addInitialElements() {
+        initialElements.forEach(element => {
+            addElementToBoard(element);
+        });
+    }
+
+    // 페이지 로드 시 기본 원소들 우측 보드에 표시
+    window.onload = function() {
+        addInitialElements();  // 기본 원소들 추가
+        document.getElementById("timer").innerText = "01:00";
+    }
+    function stopGame() {
+    const musicPlayer = document.getElementById('musicPlayer');  // 음악 요소 가져오기
+
+    gameStarted = false;
+    clearInterval(timerInterval);  // 타이머 멈춤
+    document.getElementById("startButton").innerText = "Start";
+    document.getElementById("alchemyBoard").style.pointerEvents = "none"; // 보드 비활성화
+
+    // 음악 정지
+    if (!musicPlayer.paused) {  // 음악이 재생 중인지 확인
+        musicPlayer.pause();  // 음악 정지
+        musicPlayer.currentTime = 0;  // 음악 처음으로 돌리기
+        isMusicPlaying = false;  // 음악이 중지되었음을 기록
+    }
+}
+</script>
+
+</body>
+</html>
